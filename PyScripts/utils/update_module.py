@@ -15,7 +15,7 @@ username = args.username
 if username == None:
     raise Exception("User need to be provided with -un flag \n C:\\Users\\<username>\\AppData\\Local\\Temp")
 
-src_file = './PyScripts/test_channel.py'
+src_file = './PyScripts/question_embedding.py'
 dest_dir = f'C:/Users/{username}/AppData/Local/Programs/Python/Python39/Lib/'
 
 shutil.copy2(src_file, dest_dir)
