@@ -6,6 +6,8 @@ using Discord.Addons.Hosting;
 using Discord.WebSocket;
 using DiscordCommands = Discord.Commands;
 using Discord.Interactions;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace Ana.Service
 {
@@ -13,31 +15,34 @@ namespace Ana.Service
     {
         private readonly IConfiguration _configuration;
         private readonly string _openAiApiKey;
-        private readonly string _pythonDllPath;
+        private readonly HttpClient _httpClient;
+        private readonly string _pythonServerUrl;
 
         public OpenAiService(IConfiguration configuration)
         {
             _configuration = configuration;
             _openAiApiKey = _configuration["OPENAI_API_KEY"]!;
-            _pythonDllPath = _configuration["PYTHON_DLL_PATH"]!; 
+            _httpClient = new HttpClient();
+            _pythonServerUrl = _configuration["PYTHON_SERVER_URL"]!;
         }
 
-        public string RunQuestionQuery(string input)
+        public async Task<string> RunQuestionQuery(string input)
         {
-            string value = "";
-            Runtime.PythonDLL = _pythonDllPath;
-            PythonEngine.Initialize();
-            using(Py.GIL())
+            var inputObject = new { Query = input };
+            var json = JsonConvert.SerializeObject(inputObject);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            Uri uri = new($"{_pythonServerUrl}/answer");
+            var response = await _httpClient.PostAsync(uri, content);
+
+            if (response.IsSuccessStatusCode)
             {
-                using(var scope = Py.CreateScope())
-                {
-                    dynamic module = Py.Import("question_embedding");
-                    value =  module.RunQuestionQueryPy(_openAiApiKey, input);
-                }
+                return await response.Content.ReadAsStringAsync();
             }
-            
-            PythonEngine.Shutdown();
-            return value;
+            else
+            {
+                Console.WriteLine($"Error upoading the asset: {response.StatusCode}");
+                return "I'm experiencing internal troubles. Can you please repeat your question?";
+            }
         }
 
     }

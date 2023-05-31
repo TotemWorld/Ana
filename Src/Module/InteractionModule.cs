@@ -45,7 +45,7 @@ namespace Ana.Modules
         public async Task Question(string input) 
         {
             await DeferAsync();
-            var answer = _openAiService.RunQuestionQuery(input);
+            var answer = await _openAiService.RunQuestionQuery(input);
             await FollowupAsync(text: answer, ephemeral: true);
         }
             
